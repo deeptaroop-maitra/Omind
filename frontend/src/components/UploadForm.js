@@ -10,17 +10,22 @@ export default function UploadForm() {
     const form = new FormData();
     form.append('file', file);
 
-    setStatus('Uploading...');
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    setStatus(`Uploading to ${apiUrl}...`);
     try {
-      const resp = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:5000') + '/api/upload', {
+      const resp = await fetch(apiUrl + '/api/upload', {
         method: 'POST',
         body: form
       });
       const data = await resp.json();
-      setStatus('Uploaded: ' + (data.id || JSON.stringify(data)));
+      if (resp.ok) {
+        setStatus('Uploaded: ' + (data.id || JSON.stringify(data)));
+      } else {
+        setStatus('Upload failed: ' + (data.error || 'Unknown error'));
+      }
     } catch (err) {
       console.error(err);
-      setStatus('Upload failed');
+      setStatus('Upload failed: ' + err.message);
     }
   };
 

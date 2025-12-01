@@ -1,3 +1,0 @@
-chore: initial commit - scaffold backend/frontend, docker-compose, sample data, basic STT/LLM mocks
-
-Tip: Use conventional commit prefixes like feat:, fix:, chore:, docs:, refactor:, test:.

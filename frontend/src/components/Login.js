@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('demo');
+  const [password, setPassword] = useState('password');
 
   const submit = async (e) => {
     e.preventDefault();
@@ -15,7 +16,9 @@ export default function Login({ onLogin }) {
       <form onSubmit={submit}>
         <div>
           <label>Username</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} />
+          <input value={username} onChange={e => setUsername(e.target.value)} /><br/>
+          <label>Password</label>
+          <input value={password} onChange={e => setPassword(e.target.value)} />
         </div>
         <div style={{ marginTop: 10 }}>
           <button type="submit">Login</button>

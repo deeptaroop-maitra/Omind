@@ -21,6 +21,23 @@
       }
     },
     {
+      "name": "Get Call By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "http://localhost:5000/api/calls/:id", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api","calls", ":id"] }
+      }
+    },
+    {
+      "name": "Auth - Mock Login",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{ \"username\": \"demo\" }" },
+        "url": { "raw": "http://localhost:5000/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api","auth","login"] }
+      }
+    },
+    {
       "name": "List Calls",
       "request": { "method": "GET", "url": { "raw": "http://localhost:5000/api/calls", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api","calls"] } }
     }

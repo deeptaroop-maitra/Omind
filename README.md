@@ -1,77 +1,151 @@
-# OMIND.AI - Contact Center Agentic AI Prototype
+# OMIND - Call Quality Analysis
 
-This repository is a 2-day prototype demonstrating an agentic AI workflow for contact center call quality analysis and coaching.
+A prototype for analyzing contact center calls with transcription and AI-powered scoring.
 
-Key features
-- Upload and transcribe audio (.wav/.mp3)
-- Analyze transcripts with LLM to compute quality scores
-- Generate a coaching plan with text feedback and recommended references
-- React front-end, Express back-end, MongoDB persistence
-- Docker Compose for local orchestration
+## What This Does
 
-Architecture
-- Front-end: React app (`/frontend`) — Login (mock), Upload, Dashboard
-- Back-end: Express (`/backend`) — API endpoints for upload, transcription, analysis; uses `sttService` and `llmService`
-- Database: MongoDB (via Docker Compose)
-- Orchestration: `docker-compose.yml` runs frontend, backend, and mongo.
+- Upload audio files (.wav, .mp3) or manually enter transcripts
+- Transcribe using OpenAI Whisper (or mock data for testing)
+- Analyze call quality and generate coaching plans
+- View results in a dashboard with expandable details
 
-Run locally (development, mock mode)
-1. Copy env example files:
+## Architecture
 
-```powershell
-cd backend
-copy .env.example .env
-cd ..\frontend
-copy .env.example .env
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         FRONTEND (React)                            │
+│                      localhost:3000                                 │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ Login → Upload Audio → Dashboard (Lazy-load per-call details) │  │
+│  └─────────────┬──────────────────────────────────┬──────────────┘  │
+└────────────────┼──────────────────────────────────┼─────────────────┘
+                 │ POST /api/upload                 │ GET /api/calls
+                 │ (multipart)                      │ GET /api/calls/:id
+                 │                                  │
+┌────────────────▼──────────────────────────────────▼────────────────┐
+│                      BACKEND (Express)                             │
+│                    localhost:5000                                  │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ Routes: /api/upload, /api/calls, /api/auth/login            │   │
+│  │ Saves Call to MongoDB with status="processing"              │   │
+│  │ (Future: Enqueue job to Redis + Bull worker)                │   │
+│  └────────┬────────────────────┬────────────────┬──────────────┘   │
+└───────────┼────────────────────┼────────────────┼──────────────────┘
+            │                    │                │
+            ▼                    ▼                ▼
+    ┌───────────────┐   ┌────────────────┐   ┌──────────────────┐
+    │  STT Service  │   │  LLM Service   │   │   MongoDB        │
+    │ (Whisper/mock)│   │ (GPT/heuristic)│   │ Stores Call docs │
+    │   Transcribe  │   │ Score & Coach  │   │ w/ transcript,   │
+    │   Audio       │   │ Analysis       │   │ scores,coaching  │
+    └────────┬──────┘   └────────┬───────┘   └──────────────────┘
+             │                   │
+             └─────────┬─────────┘
+                       │
+               OpenAI APIs (optional)
+        or mock responses (for demo)
 ```
 
-2. Start with Docker Compose:
+## Quick Start
 
-```powershell
+**With Docker:**
+```bash
 docker-compose up --build
+# Open http://localhost:3000
 ```
 
-3. Open frontend: http://localhost:3000
+**Local dev (requires MongoDB running):**
+```bash
+cd backend && npm install && npm run dev &
+cd frontend && npm install && npm start
+```
 
-Notes
+## Configuration
+
+**OpenAI Integration** (optional):
+- To use real transcription/analysis, set `OPENAI_API_KEY` in `backend/.env`
+- Without it, the app uses mock data and simple heuristics (great for testing)
+
+**Environment variables:**
+```
+MONGO_URI=mongodb://localhost:27017/omind
+OPENAI_API_KEY=sk-...  (optional)
+REACT_APP_API_URL=http://localhost:5000
+```
+
+## How It Works
+
+1. Upload an audio file → Backend saves it
+2. STT service transcribes (Whisper or mock)
+3. LLM service analyzes and scores the call
+4. Results stored in MongoDB
+5. Dashboard displays results with expandable details
+
+## API Endpoints
+
+- `POST /api/upload` - Upload audio file
+- `GET /api/calls` - List all calls
+- `GET /api/calls/:id` - Get call details
+- `POST /api/auth/login` - Mock login
+
+See `postman_collection.json` in the root directory.
+
+## Notes
 - STT/LLM integration: If you set `OPENAI_API_KEY` in `backend/.env`, the backend will attempt to call OpenAI (Whisper + Chat Completion) for transcription and analysis. If not provided, the system runs in mock mode using simple heuristics for demo purposes.
-- See `backend/README.md` for further details and API docs (Swagger available at `/api-docs`).
+- See `backend/README.md` for further details and API docs.
 
-Deliverables
-- Architecture overview and README (this file)
-- Back-end code: `backend/`
-- Front-end code: `frontend/`
-- Docker orchestration: `docker-compose.yml`
-- Sample calls: `sample_calls/` (add your .wav/.mp3 files here)
+## Challenges & Tradeoffs
 
-Next steps and considerations for production are documented in `backend/README.md`.
+**Async Processing:** Calls process asynchronously (500ms delay) to avoid timeouts. Use Redis + Bull queue for production scale.
 
-**GitHub & CI**
+**No API Keys?** Works fine in demo mode with mock data and heuristics. Set `OPENAI_API_KEY` in `.env` for real Whisper/GPT transcription.
 
-Recommended GitHub setup:
+**Local Storage:** Files stored locally in `backend/uploads/`. For production, migrate to S3.
 
-- Add this repo to GitHub and enable the following GitHub Actions workflow located at `.github/workflows/ci.yml` (included in this repo) to run basic checks on PRs and commits.
-- The workflow installs dependencies for both `backend` and `frontend`, runs backend tests, and builds the frontend. It provides a sensible baseline for CI in a small prototype.
+**Mock Auth:** No JWT yet. Current login is demo-only; add real auth for multi-user scenarios.
 
-Sample CI badge (add to top of this README after enabling workflow):
+## Tech Stack
 
-`![CI](https://github.com/<your-org>/<your-repo>/actions/workflows/ci.yml/badge.svg)`
+- **Frontend:** React, Fetch API
+- **Backend:** Express.js, Mongoose, multer
+- **Database:** MongoDB
+- **Transcription:** OpenAI Whisper (or mock)
+- **Analysis:** OpenAI GPT (or heuristics)
+- **Orchestration:** Docker Compose
 
-Sample commit message style (conventional-ish):
+## Project Structure
 
 ```
-chore: initial commit - scaffold backend/frontend, docker-compose, sample data, basic STT/LLM mocks
+.
+├── backend/              # Express API
+│   ├── src/
+│   │   ├── routes/       # API endpoints
+│   │   ├── models/       # MongoDB schemas
+│   │   ├── services/     # STT & LLM
+│   │   └── index.js
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/             # React app
+│   ├── src/
+│   │   ├── components/
+│   │   └── App.js
+│   ├── Dockerfile
+│   └── package.json
+├── docker-compose.yml
+├── postman_collection.json
+└── README.md
 ```
 
-How to push to GitHub (once you've created a remote repo):
+## To Do
 
-```powershell
-git remote add origin https://github.com/<your-org>/<your-repo>.git
-git push -u origin main
-```
+- [ ] Add background job queue (Redis + Bull)
+- [ ] Implement JWT authentication
+- [ ] Write unit tests
+- [ ] S3 file storage
+- [ ] Better LLM prompts
+- [ ] PII detection before sending to external APIs
 
-Notes about CI and branches:
+## License
 
-- Use feature branches (e.g., `feat/worker-queue`) and open PRs to `main`.
-- Extend CI to run linting, unit tests, and security scans (Snyk/Dependabot) before merging.
+MIT
 

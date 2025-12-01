@@ -7,6 +7,12 @@ const FormData = require('form-data');
 // otherwise returns a mock transcript for demo purposes.
 
 async function transcribe(filePath) {
+  // Verify file exists
+  if (!fs.existsSync(filePath)) {
+    console.warn(`File not found at ${filePath}, using mock transcript`);
+    return `Mock transcript (file not found at ${filePath})`;
+  }
+
   if (process.env.OPENAI_API_KEY) {
     // Call OpenAI transcription endpoint
     try {
@@ -22,6 +28,8 @@ async function transcribe(filePath) {
         maxContentLength: Infinity,
         maxBodyLength: Infinity
       });
+
+      console.log('STT response received: ', resp.data);
 
       return resp.data.text;
     } catch (err) {
