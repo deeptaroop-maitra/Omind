@@ -144,8 +144,3 @@ See `postman_collection.json` in the root directory.
 - [ ] S3 file storage
 - [ ] Better LLM prompts
 - [ ] PII detection before sending to external APIs
-
-## License
-
-MIT
-
